@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: id-581
+  labels:
+    lab: k8s-ingress
+    student-id: "69130581"

@@ -1,0 +1,13 @@
+# Change the ingress-nginx controller Service from NodePort (baremetal default)
+# to LoadBalancer, and ask MetalLB for a fixed IP: 192.168.122.41
+#
+#   kubectl -n ingress-nginx patch svc ingress-nginx-controller \
+#     --patch-file ingress-controller/ingress-nginx-svc-patch.yaml
+#
+# Then www.id-581.com and admin.id-581.com both point to 192.168.122.41 (port 80).
+metadata:
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: 192.168.122.41
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Cluster

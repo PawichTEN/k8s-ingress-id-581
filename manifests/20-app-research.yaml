@@ -1,0 +1,135 @@
+# app-research : www.id-581.com/research  (view)  and  admin.id-581.com  (edit, path /edit)
+# The summary is saved on a PersistentVolume so edits survive Pod restarts.
+#
+# PV type hostPath = a folder on one worker node. nodeAffinity pins it to k8s-worker2,
+# so the scheduler always runs the app-research Pod on that node.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: research-pv-581
+  labels:
+    app: app-research
+spec:
+  capacity:
+    storage: 100Mi
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath:
+    path: /srv/id-581/research
+    type: DirectoryOrCreate
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - k8s-worker2
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: research-data
+  namespace: id-581
+  labels:
+    app: app-research
+spec:
+  storageClassName: manual
+  volumeName: research-pv-581
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-research
+  namespace: id-581
+  labels:
+    app: app-research
+spec:
+  replicas: 1                 # one writer for the file on the PV
+  strategy:
+    type: Recreate            # old Pod releases the volume before the new one starts
+  selector:
+    matchLabels:
+      app: app-research
+  template:
+    metadata:
+      labels:
+        app: app-research
+    spec:
+      containers:
+      - name: app
+        image: python:3.12-alpine
+        command: ["python", "-u", "/app/server.py"]
+        env:
+        - name: PORT
+          value: "8080"
+        - name: DATA_FILE
+          value: /data/research.md
+        - name: SEED_FILE
+          value: /seed/research.md
+        - name: PUBLIC_URL
+          value: http://www.id-581.com/research
+        ports:
+        - name: http
+          containerPort: 8080
+        volumeMounts:
+        - name: code
+          mountPath: /app
+          readOnly: true
+        - name: seed
+          mountPath: /seed
+          readOnly: true
+        - name: data
+          mountPath: /data
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 2
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 15
+        resources:
+          requests:
+            cpu: 20m
+            memory: 32Mi
+          limits:
+            cpu: 300m
+            memory: 128Mi
+      volumes:
+      - name: code
+        configMap:
+          name: app-research-code
+      - name: seed
+        configMap:
+          name: app-research-seed
+      - name: data
+        persistentVolumeClaim:
+          claimName: research-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-research
+  namespace: id-581
+  labels:
+    app: app-research
+spec:
+  type: ClusterIP
+  selector:
+    app: app-research
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
