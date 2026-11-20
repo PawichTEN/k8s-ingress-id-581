@@ -59,7 +59,7 @@ k8s-ingress-id-581/
 ## วิธี deploy (แบบสคริปต์)
 
 ```bash
-git clone https://github.com/<github-user>/k8s-ingress-id-581.git
+git clone https://github.com/PawichTEN/k8s-ingress-id-581.git
 cd k8s-ingress-id-581
 chmod +x deploy.sh scripts/*.sh
 ./deploy.sh
@@ -123,7 +123,7 @@ ingress-nginx รวม Ingress ที่ใช้ host เดียวกัน
 
 ## เปลี่ยนรูปในหน้า /about
 
-แทนที่ไฟล์ `apps/app-about/photo.jpg` (ขนาดไม่เกิน ~500 KB เพราะ ConfigMap จำกัด 1 MiB) แล้วรัน `./deploy.sh` ใหม่
+แทนที่ไฟล์ `apps/app-about/photo.jpg` (ขนาดไม่เกิน ~150 KB เพราะ kubectl apply เก็บสำเนาไว้ใน annotation ซึ่งจำกัด 256 KB) แล้วรัน `./deploy.sh` ใหม่
 
 ## ลบ lab
 
