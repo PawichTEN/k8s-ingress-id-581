@@ -1,4 +1,0 @@
-# Add these lines to  C:\Windows\System32\drivers\etc\hosts  on Windows
-# (open Notepad with "Run as administrator", then File > Open that file)
-192.168.122.41  www.id-581.com
-192.168.122.41  admin.id-581.com
