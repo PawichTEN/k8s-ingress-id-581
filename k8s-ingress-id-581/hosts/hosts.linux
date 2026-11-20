@@ -1,0 +1,5 @@
+# Add these lines to /etc/hosts on the Linux client (k8s-client, k8s-control, ...)
+#   sudo nano /etc/hosts
+# 192.168.122.41 = EXTERNAL-IP of Service ingress-nginx-controller (MetalLB)
+192.168.122.41  www.id-581.com
+192.168.122.41  admin.id-581.com

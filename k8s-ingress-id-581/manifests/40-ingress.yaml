@@ -1,0 +1,106 @@
+# Ingress rules (ingress-nginx, ingressClassName: nginx)
+#
+#   www.id-581.com/            -> app-about     (landing page)
+#   www.id-581.com/about       -> app-about     (photo, name, ID)
+#   www.id-581.com/research    -> app-research  rewrite /research/...  -> /...
+#   www.id-581.com/api/<text>  -> app-api       rewrite /api/<text>    -> /<text>
+#   admin.id-581.com/          -> app-research  rewrite everything     -> /edit
+#
+# One Ingress per rewrite style, because rewrite-target is set per Ingress object.
+# ingress-nginx merges Ingresses that share a host into one nginx server block.
+
+# ---------- 1) www: / and /about (no rewrite) ----------
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: www-about
+  namespace: id-581
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: www.id-581.com
+    http:
+      paths:
+      - path: /about
+        pathType: Prefix
+        backend:
+          service:
+            name: app-about
+            port:
+              number: 80
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: app-about
+            port:
+              number: 80
+---
+# ---------- 2) www: /research -> app-research ----------
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: www-research
+  namespace: id-581
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: www.id-581.com
+    http:
+      paths:
+      - path: /research(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: app-research
+            port:
+              number: 80
+---
+# ---------- 3) www: /api/<text> -> app-api ----------
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: www-api
+  namespace: id-581
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: www.id-581.com
+    http:
+      paths:
+      - path: /api(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: app-api
+            port:
+              number: 80
+---
+# ---------- 4) admin.id-581.com -> app-research /edit ----------
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: admin-research
+  namespace: id-581
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /edit
+    nginx.ingress.kubernetes.io/proxy-body-size: 1m
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: admin.id-581.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: app-research
+            port:
+              number: 80
